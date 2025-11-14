@@ -1,5 +1,5 @@
 // This is the updated content for 'main-scene.js'
-// It now loads 'portfolio-building-1.glb'
+// It now loads 'portfolio-building-2.glb'
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -143,7 +143,7 @@ function loadBlenderScene() {
     
     // --- THIS IS THE CHANGE ---
     // The URL now points to your new file.
-    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building-1.glb';
+    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building-2.glb';
 
     loader.load(modelUrl, (gltf) => {
         loadedModel = gltf.scene;
