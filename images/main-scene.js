@@ -1,13 +1,14 @@
 // This is the updated content for 'main-scene.js'
-// It now loads 'portfolio-building-2.glb'
+// It now has properly configured shadows.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-// --- 1. Global State Variables ---
+// --- Global State Variables ---
 let scene, camera, renderer, cssRenderer, controls, raycaster, mouse, textObject;
 let videoElements = []; 
 let hoveredObject = null;
@@ -21,20 +22,18 @@ let eventHandlers = {
 };
 let isLandingPage = false; 
 let isDragging = false; 
-
 let clickableObjects = [];
 let loadedModel = null; 
 let tempPosition = new THREE.Vector3();
 
-// --- 3. Element References ---
+// --- Element References ---
 const infoEl = document.getElementById('project-info');
 const titleEl = document.getElementById('project-title');
 const descEl = document.getElementById('project-description');
 const canvasEl = document.getElementById('webgl-canvas');
 const cssContainerEl = document.getElementById('css-container');
 
-// --- 4. Helper Functions ---
-
+// --- Helper Functions (No Changes) ---
 function updateActiveNavPill() {
     const allLinks = document.querySelectorAll('.category-nav a');
     if (!allLinks || allLinks.length === 0) return; 
@@ -51,13 +50,11 @@ function updateActiveNavPill() {
         activeLink.classList.add('active');
     }
 }
-
 function playAllVideos() {
     videoElements.forEach(video => {
-        video.play().catch(e => { /* console.warn("Video autoplay prevented.") */ });
+        video.play().catch(e => {});
     });
 }
-
 function checkIntersection() {
     if (!isLandingPage || !raycaster || !mouse || !camera || clickableObjects.length === 0) return;
     raycaster.setFromCamera(mouse, camera);
@@ -87,19 +84,25 @@ function checkIntersection() {
     }
 }
 
-// --- 5. Main Functions (Init, Build, Animate) ---
+// --- Main Functions ---
 
 function initScene() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f0f0);
+    scene.background = new THREE.Color(0xb0b0b0);
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 5, 15); // Tweak this based on your model's scale
+    camera.position.set(0, 5, 15); 
 
     renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    
+    // --- 1. ENABLE SHADOWS ON RENDERER ---
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 
     cssRenderer = new CSS3DRenderer();
     cssContainerEl.appendChild(cssRenderer.domElement);
@@ -112,10 +115,26 @@ function initScene() {
     
     eventHandlers.onWindowResize(); 
     
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    directionalLight.position.set(5, 10, 7);
+    // --- 2. CONFIGURE SUN LIGHT & SHADOWS ---
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    directionalLight.position.set(5, 10, 7); // Match this to your HDRI's sun
+    
+    // This is the important part
+    directionalLight.castShadow = true; 
+
+    // --- 3. SHADOW CAMERA CONFIGURATION ---
+    // This increases the area that your sun casts shadows on.
+    // Tweak these values if shadows get cut off.
+    const shadowSize = 20; // The "box" size for shadows
+    directionalLight.shadow.camera.left = -shadowSize;
+    directionalLight.shadow.camera.right = shadowSize;
+    directionalLight.shadow.camera.top = shadowSize;
+    directionalLight.shadow.camera.bottom = -shadowSize;
+    directionalLight.shadow.camera.near = 0.5; 
+    directionalLight.shadow.camera.far = 50; 
+    directionalLight.shadow.mapSize.width = 1024; // Higher res shadows
+    directionalLight.shadow.mapSize.height = 1024;
+    
     scene.add(directionalLight);
     
     controls = new OrbitControls(camera, renderer.domElement);
@@ -130,34 +149,50 @@ function initScene() {
     mouse = new THREE.Vector2();
 }
 
+function setupEnvironment() {
+    const loader = new RGBELoader();
+    const hdriUrl = 'https://zytanca.github.io/portfolio/images/my_hdri.hdr'; // Make sure this is the right HDRI
+
+    loader.load(hdriUrl, (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = texture;
+        scene.environment = texture;
+    }, undefined, (error) => {
+        console.error('An error happened while loading the HDRI.', error);
+    });
+}
+
 function loadBlenderScene() {
     clickableObjects = [];
-    const textureLoader = new THREE.TextureLoader();
-    
-    // --- Setup Draco loader ---
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://unpkg.com/three@0.164.1/examples/jsm/libs/draco/gltf/');
     
     const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader); // Tell GLTFLoader to use Draco
+    loader.setDRACOLoader(dracoLoader);
     
-    // --- THIS IS THE CHANGE ---
-    // The URL now points to your new file.
-    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building-2.glb';
+    // Make sure you're loading the file you most recently exported
+    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building-2.glb'; // Or '-3.glb', etc.
 
     loader.load(modelUrl, (gltf) => {
         loadedModel = gltf.scene;
-        scene.add(loadedModel);
-
+        
+        // --- 4. SET SHADOWS ON YOUR MODEL ---
+        // This is crucial. Your model needs to know how to interact with shadows.
         loadedModel.traverse((child) => {
             if (child.isMesh) {
-                if (child.userData.url) {
-                    console.log("Found clickable object:", child.name, child.userData);
-                    clickableObjects.push(child);
-                }
+                // This makes objects cast shadows
+                child.castShadow = true;
+                // This makes objects (like the ground) receive shadows
+                child.receiveShadow = true;
+            }
+            // Also find your clickable objects
+            if (child.userData.url) {
+                console.log("Found clickable object:", child.name, child.userData);
+                clickableObjects.push(child);
             }
         });
         
+        scene.add(loadedModel);
         controls.update();
         
     }, undefined, (error) => {
@@ -165,6 +200,7 @@ function loadBlenderScene() {
     });
 }
 
+// --- No changes to the functions below ---
 
 function animate() {
     if (!isLandingPage || !renderer || !cssRenderer) { return; } 
@@ -194,7 +230,6 @@ eventHandlers.onWindowResize = () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
 };
-
 eventHandlers.onMouseMove = (event) => {
     if (!isLandingPage || !mouse) return;
     if (!hasInteracted) {
@@ -204,11 +239,9 @@ eventHandlers.onMouseMove = (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 };
-
 eventHandlers.onMouseDown = () => {
     isDragging = false; 
 };
-
 eventHandlers.onMouseUp = (event) => {
     if (isDragging || !isLandingPage) return;
     raycaster.setFromCamera(mouse, camera);
@@ -218,7 +251,6 @@ eventHandlers.onMouseUp = (event) => {
         let clickedObject = intersects[0].object;
         let projectData = clickedObject;
         
-        // Look for the parent object with the URL property
         while (projectData.parent && !projectData.userData.url) {
             projectData = projectData.parent; 
         }
@@ -231,11 +263,6 @@ eventHandlers.onMouseUp = (event) => {
     isDragging = false; 
 };
 
-/**
- * ====================================================================
- * DESTROY 3D VIEWPORT
- * ====================================================================
- */
 function destroy3DViewport() {
     if (!scene) { return; } 
     isLandingPage = false; 
@@ -243,15 +270,12 @@ function destroy3DViewport() {
         cancelAnimationFrame(currentAnimationFrameId);
         currentAnimationFrameId = null;
     }
-
     window.removeEventListener('resize', eventHandlers.onWindowResize);
     window.removeEventListener('mousemove', eventHandlers.onMouseMove);
     window.removeEventListener('mousedown', eventHandlers.onMouseDown);
     window.removeEventListener('mouseup', eventHandlers.onMouseUp);
-
     if (loadedModel) { scene.remove(loadedModel); }
     clickableObjects = []; 
-
     if (scene) { 
         scene.traverse(object => { 
             if (object.geometry) object.geometry.dispose(); 
@@ -264,24 +288,17 @@ function destroy3DViewport() {
         textObject = null; 
     }
     if (controls) { controls.dispose(); controls = null; }
-    
     if (renderer) { renderer.dispose(); renderer = null; }
     if (cssRenderer && cssRenderer.domElement.parentNode) { 
         cssRenderer.domElement.parentNode.removeChild(cssRenderer.domElement); 
         cssRenderer = null; 
     }
-
     document.body.classList.remove('viewport-active');
     scene = null;
     camera = null;
     loadedModel = null;
 }
 
-/**
- * ====================================================================
- * CORE ACTIVATION LOGIC
- * ====================================================================
- */
  function checkAndInit() {
     updateActiveNavPill();
     if (!canvasEl || !cssContainerEl) return; 
@@ -312,11 +329,11 @@ function init3DViewport() {
         console.error('Missing required HTML elements for 3D scene. Aborting init.');
         return;
     }
-
     console.log("Readymag: Initializing 3D Viewport...");
     document.body.classList.add('viewport-active');
     
     initScene();
+    setupEnvironment();
     
     window.addEventListener('resize', eventHandlers.onWindowResize);
     window.addEventListener('mousemove', eventHandlers.onMouseMove);
@@ -326,7 +343,6 @@ function init3DViewport() {
     loadBlenderScene();
     animate();
 }
-
 
 // 1. Initial run
 window.addEventListener('load', () => {
