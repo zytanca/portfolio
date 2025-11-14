@@ -1,15 +1,15 @@
-// This is the entire content for your new 'main-scene.js' file.
+// This is the updated content for 'main-scene.js'
+// All KTX2Loader code has been removed.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'; // For your WebP textures
 
 // --- 1. Global State Variables ---
 let scene, camera, renderer, cssRenderer, controls, raycaster, mouse, textObject;
-let ktx2Loader; // For WebP textures
+// let ktx2Loader; // REMOVED
 let videoElements = []; 
 let hoveredObject = null;
 let currentAnimationFrameId = null;
@@ -102,11 +102,7 @@ function initScene() {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // --- SETUP KTX2/WEBP LOADER ---
-    ktx2Loader = new KTX2Loader();
-    ktx2Loader.setTranscoderPath('https://unpkg.com/three@0.164.1/examples/jsm/libs/basis/');
-    ktx2Loader.detectSupport(renderer);
-    // --- END KTX2 SETUP ---
+    // --- KTX2 LOADER SETUP REMOVED ---
 
     cssRenderer = new CSS3DRenderer();
     cssContainerEl.appendChild(cssRenderer.domElement);
@@ -147,7 +143,7 @@ function loadBlenderScene() {
     
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader); // Tell GLTFLoader to use Draco
-    loader.setKTX2Loader(ktx2Loader); // Tell GLTFLoader to use KTX2/WebP
+    // loader.setKTX2Loader(ktx2Loader); // REMOVED
     
     // The correct GitHub Pages link to your file in the 'images' folder
     const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building.glb';
@@ -273,7 +269,7 @@ function destroy3DViewport() {
     if (controls) { controls.dispose(); controls = null; }
 
     // --- Dispose loaders ---
-    if (ktx2Loader) { ktx2Loader.dispose(); ktx2Loader = null; }
+    // if (ktx2Loader) { ktx2Loader.dispose(); ktx2Loader = null; } // REMOVED
     
     if (renderer) { renderer.dispose(); renderer = null; }
     if (cssRenderer && cssRenderer.domElement.parentNode) { 
