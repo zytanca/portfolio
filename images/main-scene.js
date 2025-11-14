@@ -1,5 +1,5 @@
 // This is the updated content for 'main-scene.js'
-// All KTX2Loader code has been removed.
+// It now loads 'portfolio-building-1.glb'
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -9,7 +9,6 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // --- 1. Global State Variables ---
 let scene, camera, renderer, cssRenderer, controls, raycaster, mouse, textObject;
-// let ktx2Loader; // REMOVED
 let videoElements = []; 
 let hoveredObject = null;
 let currentAnimationFrameId = null;
@@ -102,8 +101,6 @@ function initScene() {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // --- KTX2 LOADER SETUP REMOVED ---
-
     cssRenderer = new CSS3DRenderer();
     cssContainerEl.appendChild(cssRenderer.domElement);
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -143,10 +140,10 @@ function loadBlenderScene() {
     
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader); // Tell GLTFLoader to use Draco
-    // loader.setKTX2Loader(ktx2Loader); // REMOVED
     
-    // The correct GitHub Pages link to your file in the 'images' folder
-    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building.glb';
+    // --- THIS IS THE CHANGE ---
+    // The URL now points to your new file.
+    const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building-1.glb';
 
     loader.load(modelUrl, (gltf) => {
         loadedModel = gltf.scene;
@@ -267,9 +264,6 @@ function destroy3DViewport() {
         textObject = null; 
     }
     if (controls) { controls.dispose(); controls = null; }
-
-    // --- Dispose loaders ---
-    // if (ktx2Loader) { ktx2Loader.dispose(); ktx2Loader = null; } // REMOVED
     
     if (renderer) { renderer.dispose(); renderer = null; }
     if (cssRenderer && cssRenderer.domElement.parentNode) { 
