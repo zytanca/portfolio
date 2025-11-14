@@ -1,3 +1,5 @@
+// This is the entire content for your new 'main-scene.js' file.
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
@@ -147,7 +149,7 @@ function loadBlenderScene() {
     loader.setDRACOLoader(dracoLoader); // Tell GLTFLoader to use Draco
     loader.setKTX2Loader(ktx2Loader); // Tell GLTFLoader to use KTX2/WebP
     
-    // The correct GitHub Pages link to your file
+    // The correct GitHub Pages link to your file in the 'images' folder
     const modelUrl = 'https://zytanca.github.io/portfolio/images/portfolio-building.glb';
 
     loader.load(modelUrl, (gltf) => {
